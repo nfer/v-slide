@@ -292,14 +292,12 @@ var CovTouch = function () {
     }, {
         key: 'touchStart',
         value: function touchStart(e) {
-            e.preventDefault();
             this.state.swiping = true;
             this.touch.start = this.getPosition(e)[0];
         }
     }, {
         key: 'touchMove',
         value: function touchMove(e) {
-            e.preventDefault();
             if (!this.touch.start) return;
             this.touch.end = this.getPosition(e)[0];
             this.notice('swiping', this.getRect(this.touch.end, this.touch.start));
@@ -307,9 +305,10 @@ var CovTouch = function () {
     }, {
         key: 'touchEnd',
         value: function touchEnd(e) {
-            e.preventDefault();
             if (!this.touch.start) return;
-            this.touch.end = this.getPosition(e)[0];
+            if (e.type === 'mouseup') {
+                this.touch.end = this.getPosition(e)[0];
+            }
             var angle = this.getAngle(this.touch.end, this.touch.start);
             if (angle > -45 && angle < 45) {
                 this.notice('swipe-left', this.getRect(this.touch.end, this.touch.start));

@@ -62,7 +62,7 @@
 </template>
 
 <script>
-import CovTouch from './cov-touch.es5.js'
+import CovTouch from './cov-touch'
 
 const _ = {
     on (el, type, handler) {
