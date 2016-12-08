@@ -2,7 +2,7 @@
 
 # Demo
 
-![](http://ww3.sinaimg.cn/large/69402bf8jw1fajs22iy8ng20xy0gsqv7.gif)
+![](https://ww3.sinaimg.cn/large/69402bf8jw1fajs22iy8ng20xy0gsqv7.gif)
 
 The demo page is [HERE](http://hilongjw.github.io/vue-slide/demo.html).
 
