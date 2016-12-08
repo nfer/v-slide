@@ -1,201 +1,250 @@
+<style>
+.rd-swipe {
+    height: 400px;
+    width: 600px;
+    margin: 0 auto;
+    position: relative;
+    overflow: hidden;
+    z-index: 1;
+}
+.rd-swipe-wrapper {
+    position: relative;
+    width: 100%;
+    height: 100%;
+    z-index: 1;
+    display: flex;
+    -webkit-transition-property: -webkit-transform;
+    transition-property: transform;
+    box-sizing: content-box;
+}
+.rd-swipe-item {
+    width: 100%;
+    flex-shrink: 0;
+    height: 100%;
+    background-size: cover;
+    background-position: 50%;
+}
+.rd-swipe-pagination {
+    position: absolute;
+    bottom: .5rem;
+    width: 100%;
+    display: flex;
+    justify-content: center;
+}
+.rd-swipe-pagination-item {
+    width: 8px;
+    height: 8px;
+    background: rgba(0, 0, 0, .5);
+    z-index: 1;
+    margin: 4px;
+    border-radius: 50%;
+}
+.rd-swipe-pagination-item.active {
+    background: rgba(0, 0, 0, .8);
+}
+.rd-swipe-pagination-item:hover {
+    background: rgba(0, 0, 0, .3);
+}
+</style>
+<template>
+    <div class="rd-swipe">
+        <div class="rd-swipe-wrapper" :style="wrapperStyle">
+            <slot></slot>
+        </div>
+        <div class="rd-swipe-pagination" v-if="options.pagination">
+            <div class="rd-swipe-pagination-item" 
+                :class="{ 'active': item.active }" 
+                v-for="(item, index) in pagination"
+                @click="turnTo(index)"
+            ></div>
+        </div>
+    </div>
+</template>
+
 <script>
+import CovTouch from './cov-touch.es5.js'
+
+const _ = {
+    on (el, type, handler) {
+        el.addEventListener(type, handler, false)
+    },
+    off (el, type, handler) {
+        el.addEventListener(type, handler, false)
+    }
+}
+
 export default {
-    props: ['slide', 'pages'],
-    ready () {
-        this.$on('slideTo', (num) => {
-            this.turnTo(num)
-        })
-
-        this.$on('slideNext', () => {
-            this.next()
-        })
-
-        this.$on('slidePre', () => {
-            this.pre()
-        })
+    props: {
+        swipe: {
+            type: Object,
+            default () {
+                return {}
+            }
+        }
+    },
+    data () {
+        return {
+            $wrapper: null,
+            $touch: null,
+            timer: null,
+            pagination: [],
+            swiper: {
+                swiping: false,
+                rect: {
+                    width: 0,
+                    height: 0
+                },
+                count: 0,
+                index: 0,
+                options: {}
+            },
+            position: {
+                x: 0,
+                y: 0,
+                z: 0
+            },
+            options: {
+                activeIndex: 0,
+                autoplay: 3000,
+                pagination: true
+            }
+        }
+    },
+    computed: {
+        wrapperStyle () {
+            if (this.swiper.swiping) {
+                return {
+                    transform: `translate3d(-${this.position.x}px, ${this.position.y}px, ${this.position.z}px)`,
+                    '-webkit-transform': `translate3d(-${this.position.x}px, ${this.position.y}px, ${this.position.z}px)`
+                }
+            } else {
+                return {
+                    transform: `translate3d(-${this.position.x}px, ${this.position.y}px, ${this.position.z}px)`,
+                    '-webkit-transform': `translate3d(-${this.position.x}px, ${this.position.y}px, ${this.position.z}px)`,
+                    transition: 'all .3s',
+                    '-webkit-transition': 'all .3s',
+                }
+            }
+            
+        }
+    },
+    mounted () {
+        _.on(window, 'resize', this.init())
+        _.on(this.$el, 'resize', this.init())
+    },
+    beforeDestroy () {
+        if (this.$touch) {
+            this.$touch.destroy()
+        }
     },
     methods: {
-        swipeUp (move) {
-            this.$dispatch('swipeUp', move)
-        },
-        swipeDown (move) {
-            this.$dispatch('swipeDown', move)
-        },
-        reset () {
-            let slideTmp = this.pages
-            for(let page of slideTmp){
-                page.current = 0
-                this.styleCompute(page)
-            }
-        },
-        checkState () {
-            this.slide.init.canNext = true
-            this.slide.init.canPre = true
+        init ()  {
+            this.options = Object.assign(this.options, this.swipe)
+            this.$wrapper = this.$el.getElementsByClassName('rd-swipe-wrapper')[0]
+            this.swiper.count = this.$el.getElementsByClassName('rd-swipe-item').length
+            this.swiper.rect = this.$el.getBoundingClientRect()
 
-            let len = this.pages.length
-            if(this.pages[len-2].origin + this.pages[len-2].current == -100){
-                this.slide.init.canNext = false
-            }
-            if(this.pages[1].origin + this.pages[1].current == 100){
-                this.slide.init.canPre = false
-            }
-        },
-        swipeStart (e) {
-
-            if (e.type === 'touchstart') {
-                if (e.touches.length>1) {
-                    this.slide.init.tracking = false;
-                    return;
-                } else {
-                    this.slide.init.tracking = true;
-                    /* Hack - would normally use e.timeStamp but it's whack in Fx/Android */
-                    this.slide.init.start.t = new Date().getTime();
-                    this.slide.init.start.x = e.targetTouches[0].clientX;
-                    this.slide.init.start.y = e.targetTouches[0].clientY;
-                }
-
-            } else {
-                this.slide.init.tracking = true;
-                /* Hack - would normally use e.timeStamp but it's whack in Fx/Android */
-                this.slide.init.start.t = new Date().getTime();
-                this.slide.init.start.x = e.clientX;
-                this.slide.init.start.y = e.clientY;
-            }
-            
-        },
-        swipeMove (e) {
-            
-            if (this.slide.init.tracking) {
-                if (e.type === 'touchmove') {
-                    e.preventDefault();
-                    this.slide.init.end.x = e.targetTouches[0].clientX;
-                    this.slide.init.end.y = e.targetTouches[0].clientY;
-                } else {
-                    e.preventDefault();
-                    this.slide.init.end.x = e.clientX;
-                    this.slide.init.end.y = e.clientY;
-                }
-            }
-        },
-        swipeEnd (e) {
-            this.slide.init.tracking = false;
-            let now = new Date().getTime();
-            let deltaTime = now - this.slide.init.start.t;
-            let deltaX = this.slide.init.end.x - this.slide.init.start.x;
-            let deltaY = this.slide.init.end.y - this.slide.init.start.y;
-            /* work out what the movement was */
-            if (deltaTime > this.slide.init.thresholdTime) {
-                /* gesture too slow */
-                return;
-            } else {
-                if ((deltaX > this.slide.init.thresholdDistance)&&(Math.abs(deltaY) < this.slide.init.thresholdDistance)) {
-                    //swipe right
-                    this.pre()
-                } else if ((-deltaX > this.slide.init.thresholdDistance)&&(Math.abs(deltaY) < this.slide.init.thresholdDistance)) {
-                    //swipe left
-                    this.next()
-                } else if ((deltaY > this.slide.init.thresholdDistance)&&(Math.abs(deltaX) < this.slide.init.thresholdDistance)) {
-                    //swipe down
-                    this.swipeDown(Math.abs(deltaY))
-
-                } else if ((-deltaY > this.slide.init.thresholdDistance)&&(Math.abs(deltaX) < this.slide.init.thresholdDistance)) {
-                    //swipe up
-                    this.swipeUp(Math.abs(deltaY))
-
-                } else {
-                    //nothing
-                }
-            }
-        },
-        pre () {
-            if(!this.slide.init.canPre) return;
-
-            for(let page of this.pages){
-                this.currentCompute (page, false)
+            if (this.options.pagination) {
+                this.pagination = Array.from({length: this.swiper.count}).map((item, index) => {
+                    return {
+                        index: index,
+                        active: index === 0
+                    }
+                })
             }
 
-            this.slide.init.currentPage--
-            this.checkState()
-            
+            this.initSwipe()
+            if (this.swipe.autoplay) {
+                this.startAutoPlay(this.swipe.autoplay)
+            }
+        },
+        initSwipe () {
+            if (this.$touch) {
+                this.$touch.destroy()
+            }
+            this.$touch = new CovTouch({el: this.$el })
+
+            this.$touch.listen('swipe-left', null, () => {
+                this.swiper.swiping = false
+                this.next()
+            })
+            this.$touch.listen('swipe-right', null, () => {
+                this.swiper.swiping = false
+                this.pre()
+            })
+            let movediff = 0
+
+            this.$touch.listen('swiping', null, (start, end) => {
+                this.swiper.swiping = true
+                let move = start.x - end.x
+                this.position.x += (move - movediff)
+                movediff = move
+            })
+
+            this.$touch.listen('swiped', null, (start, end) => {
+                movediff = 0
+                this.swiper.swiping = false
+            })
+        },
+        startAutoPlay (delay) {
+            this.stopAutoPlay()
+            this.timer = setInterval(this.play, delay || this.options.autoplay)
+        },
+        stopAutoPlay () {
+            if (this.timer) {
+                window.clearInterval(this.timer)
+                window.clearTimeout(this.timer)
+                this.timer = null
+            }
+        },
+        play () {
+            if (this.swiper.index === (this.swiper.count - 1)) {
+                this.swiper.index = -1
+            }
+            if (this.swiper.swiping) return
+            this.next()
         },
         next () {
-            if(!this.slide.init.canNext) return;
-
-            for(let page of this.pages) {
-                this.currentCompute (page, true)
+            if (this.swiper.index < this.swiper.count - 1) {
+                this.swiper.index++
             }
-
-            this.slide.init.currentPage++
-            this.checkState()
-
+            this.position.x = (this.swiper.rect.width * this.swiper.index)
+            this.checkOut()
         },
-        turnTo (num) {
-            let index = Math.ceil(num) - 1
-            let len = this.pages.length
-            let step = 0
-            if (index > this.pages.length - 1) {
-                console.error("there are no more pages")
-                return false
+        pre () {
+            if (this.swiper.index > 0) {
+                this.swiper.index--
             }
-            this.slide.init.currentPage = Math.ceil(num)
-
-            for (let i = 0; i<len; i++) {
-                if(this.pages[i].current+this.pages[i].origin == 0){
-                    step = index - i
-                    break;
-                }
-            }
-
-            for(let page of this.pages) {
-                page.current = page.current - step * 100;
-                this.styleCompute(page)
-            }
-
-            this.checkState()
+            this.position.x = (this.swiper.rect.width * this.swiper.index)
+            this.checkOut()
         },
-        currentCompute (obj, next) {
-            if(next){
-                obj.current = obj.current-100;
-            } else {
-                obj.current = obj.current+100;
-            }
-            this.styleCompute(obj)
+        turnTo (index) {
+            index = Math.floor(index)
+            if (index < -1 || index > this.swiper.count) return console.error('invaild index: ', index)
+            this.stopAutoPlay()
+            this.swiper.index = index
+            this.position.x = (this.swiper.rect.width * index)
+            this.checkOut()
+            this.timer = setTimeout(() => {
+                this.startAutoPlay()
+            }, this.swipe.autoplay * 2)
         },
-        styleCompute (obj) {
-            obj.style['transform'] =  `translateX(${obj.origin + obj.current}%)`
+        setPaginationActive (index) {
+            this.pagination.forEach(item => item.active = false)
+            this.pagination[index].active = true
+        },
+        checkOut () {
+            this.swipe.activeIndex = this.swiper.index
+            if (this.options.pagination) {
+                this.setPaginationActive(this.swiper.index)
+            }
+            if (this.position.x > (this.swiper.rect.width * this.swiper.count)) {
+                this.position.x = (this.swiper.rect.width * this.swiper.count)
+            }
+            if (this.position.x < 0) {
+                this.position.x = 0
+            }
         }
     }
 }
 </script>
-<style>
-.slider {
-    position: relative;
-    height: 400px;
-    top: 0;
-    left: 0;
-    color: #fff;
-    overflow: hidden;
-}
-.slider-item {
-    position: absolute;
-    width: 100%;
-    height: 100%;
-    text-align: center;
-    transition: 0.4s ease-in-out transform, opacity;
-    -webkit-transition: 0.4s ease-in-out transform, opacity;
-    -webkit-transition-duration: 0.4s;
-    -webkit-transition-timing-function: ease-in-out;
-}
-</style>
-<template>
-    <div class="slider"
-    @touchmove="swipeMove"
-    @touchstart="swipeStart"
-    @touchend="swipeEnd"
-    @mousedown="swipeStart"
-    @mouseup="swipeEnd"
-    @mousemove="swipeMove"
-    >
-        <slot></slot>
-    </div>
-</template>
