@@ -131,6 +131,7 @@ export default {
     mounted () {
         _.on(window, 'resize', this.init)
         _.on(this.$el, 'resize', this.init)
+        this.init()
     },
     beforeDestroy () {
         if (this.$touch) {
