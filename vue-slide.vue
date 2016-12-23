@@ -129,8 +129,8 @@ export default {
         }
     },
     mounted () {
-        _.on(window, 'resize', this.init())
-        _.on(this.$el, 'resize', this.init())
+        _.on(window, 'resize', this.init)
+        _.on(this.$el, 'resize', this.init)
     },
     beforeDestroy () {
         if (this.$touch) {
