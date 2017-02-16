@@ -2,7 +2,7 @@
   "name": "vue-slide",
   "version": "1.1.1",
   "description": "",
-  "main": "vue-slide.es5.vue",
+  "main": "vue-slide.vue",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1"
   },
