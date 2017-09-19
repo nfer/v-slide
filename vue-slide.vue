@@ -155,8 +155,8 @@ export default {
             }
 
             this.initSwipe()
-            if (this.swipe.autoplay) {
-                this.startAutoPlay(this.swipe.autoplay)
+            if (this.options.autoplay) {
+                this.startAutoPlay(this.options.autoplay)
             }
         },
         initSwipe () {
@@ -228,7 +228,7 @@ export default {
             this.checkOut()
             this.timer = setTimeout(() => {
                 this.startAutoPlay()
-            }, this.swipe.autoplay * 2)
+            }, this.options.autoplay * 2)
         },
         setPaginationActive (index) {
             this.pagination.forEach(item => item.active = false)
