@@ -105,10 +105,11 @@ export default {
             },
             options: {
                 activeIndex: 0,
-                autoplay: true,
                 duration: 3000,
+                autoplay: true,
                 enableTouch: true,
-                pagination: true
+                pagination: true,
+                onSwiped: null
             }
         }
     },
@@ -249,6 +250,10 @@ export default {
             }
             if (this.position.x < 0) {
                 this.position.x = 0
+            }
+
+            if (this.options.onSwiped) {
+              this.options.onSwiped(this.swipe.activeIndex);
             }
         }
     }
