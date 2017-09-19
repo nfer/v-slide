@@ -105,7 +105,7 @@ export default {
             },
             options: {
                 activeIndex: 0,
-                autoplay: 3000,
+                duration: 3000,
                 pagination: true
             }
         }
@@ -155,8 +155,8 @@ export default {
             }
 
             this.initSwipe()
-            if (this.options.autoplay) {
-                this.startAutoPlay(this.options.autoplay)
+            if (this.options.duration) {
+                this.startAutoPlay(this.options.duration)
             }
         },
         initSwipe () {
@@ -189,7 +189,7 @@ export default {
         },
         startAutoPlay (delay) {
             this.stopAutoPlay()
-            this.timer = setInterval(this.play, delay || this.options.autoplay)
+            this.timer = setInterval(this.play, delay || this.options.duration)
         },
         stopAutoPlay () {
             if (this.timer) {
@@ -228,7 +228,7 @@ export default {
             this.checkOut()
             this.timer = setTimeout(() => {
                 this.startAutoPlay()
-            }, this.options.autoplay * 2)
+            }, this.options.duration * 2)
         },
         setPaginationActive (index) {
             this.pagination.forEach(item => item.active = false)
