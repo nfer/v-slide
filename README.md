@@ -1,4 +1,4 @@
-# vue-slide
+# v-slide
 
 # Demo
 
@@ -11,8 +11,10 @@ The demo page is [HERE](http://hilongjw.github.io/vue-slide/demo.html).
 ## npm
 
 ```shell
-$ npm install vue-slide
+$ npm install v-slide
 ```
+
+**note** This repo is forked from [vue-slide](https://www.npmjs.com/package/vue-slide)([github](https://github.com/hilongjw/vue-slide)), so the useage and apis are compatible with it.
 
 # Usage
 
