@@ -107,6 +107,7 @@ export default {
                 activeIndex: 0,
                 autoplay: true,
                 duration: 3000,
+                enableTouch: true,
                 pagination: true
             }
         }
@@ -155,7 +156,10 @@ export default {
                 })
             }
 
-            this.initSwipe()
+            if (this.options.enableTouch) {
+                this.initSwipe()
+            }
+
             if (this.options.autoplay) {
                 this.startAutoPlay(this.options.duration)
             }
